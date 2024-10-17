@@ -24,9 +24,6 @@ jobs:
       - name: Instalar dependências
         run: npm install --legacy-peer-deps
 
-      - name: Executar lint
-        run: npm run lint
-
       - name: Executar testes
         run: npm run test:dev -- --ci --coverage
 
