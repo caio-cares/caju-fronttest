@@ -1,32 +1,49 @@
-// test("new admission", async ({ page }) => {
-//   await page.goto("http://localhost:3001");
+import { NewUserPage } from "./pages/new-admission";
+import { test, expect } from "@playwright/test";
 
-//   await page.getByTestId("new-admission-button").click();
+test.beforeEach(async ({ page }) => {
+  await page.goto("http://localhost:3001");
 
-//   await expect(page.getByText("Nome")).toBeVisible();
+  await page.getByTestId("new-admission-button").click();
+});
 
-//   await page.fill('input[name="employeeName"]', "Teste Frontend");
-//   await page.fill('input[name="email"]', "e2e@e2e.com");
-//   await page.fill('input[name="cpf"]', "28692098000");
-//   await page.fill('input[name="admissionDate"]', "2024-10-31");
-
-//   await page.getByTestId("create-new-admission").click();
-// });
-
-import { test } from "./support/globals";
-
-test.describe("Create new admission", async () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("http://localhost:3001");
-
-    await page.getByTestId("new-admission-button").click();
+test("Deve criar um novo usuário com sucesso", async ({ page }) => {
+  // Intercepta a requisição POST para o endpoint da API
+  await page.route("registrations", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      // Simula uma resposta bem-sucedida
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Usuário criado com sucesso" }),
+      });
+    } else {
+      await route.continue();
+    }
   });
-  test("Creating new user", async ({ newUserPage }) => {
-    await newUserPage.fillForm(
-      "Teste Frontend",
-      "teste@e2e.com",
-      "28692098000",
-      "2024-10-31"
-    );
+
+  const newUserPage = new NewUserPage(page);
+
+  await newUserPage.fillForm(
+    "Teste Frontend",
+    "teste@example.com",
+    "987.654.321-00",
+    "2023-10-01"
+  );
+
+  await page.route("registrations", async (route) => {
+    const request = route.request();
+    if (request.method() === "GET") {
+      // Simula uma resposta bem-sucedida
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+      });
+    } else {
+      await route.continue();
+    }
   });
+
+  await expect(page).toHaveURL("http://localhost:3001/dashboard");
 });

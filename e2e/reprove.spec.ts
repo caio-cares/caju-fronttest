@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("Aprovar um novo usuário com sucesso", async ({ page }) => {
+test("Reprovar um novo usuário com sucesso", async ({ page }) => {
   const newUser = {
     id: "12345",
     employeeName: "Teste Frontend",
@@ -28,7 +28,7 @@ test("Aprovar um novo usuário com sucesso", async ({ page }) => {
   await page.route(`**/registrations/${newUser.id}`, async (route, request) => {
     if (request.method() === "PUT") {
       // Atualiza o status do usuário para 'APPROVED' no objeto 'newUser'
-      newUser.status = "APPROVED";
+      newUser.status = "REPROVED";
 
       // Simula a aprovação do usuário
       await route.fulfill({
@@ -53,7 +53,7 @@ test("Aprovar um novo usuário com sucesso", async ({ page }) => {
   await expect(userCard).toBeVisible();
 
   // Selecionar o botão "Aprovar" dentro do cartão do usuário
-  const approveButton = userCard.getByTestId("approve-button");
+  const approveButton = userCard.getByTestId("reprove-button");
   await expect(approveButton).toBeVisible();
 
   // Clicar no botão "Aprovar"
@@ -65,8 +65,8 @@ test("Aprovar um novo usuário com sucesso", async ({ page }) => {
   const yesButton = confirmDialog.getByText("Sim", { exact: true });
   await yesButton.click();
 
-  // Aguarde até que o cartão do usuário apareça na coluna "Aprovado"
-  const approvedColumn = page.locator("text=Aprovado").locator("..");
+  // Aguarde até que o cartão do usuário apareça na coluna "Reprovado"
+  const approvedColumn = page.locator("text=Reprovado").locator("..");
   await expect(approvedColumn).toContainText(newUser.employeeName);
 
   // Verificar que o usuário não está mais na coluna "Pronto para Revisar"

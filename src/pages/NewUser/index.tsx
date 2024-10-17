@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { HiOutlineArrowLeft } from "react-icons/hi";
@@ -20,7 +20,7 @@ const NewUserPage = () => {
     history.push(routes.dashboard);
   };
 
-  const { register, handleSubmit, formState, setValue, watch } = useForm<
+  const { control, handleSubmit, formState } = useForm<
     z.infer<typeof formSchema>
   >({
     resolver: zodResolver(formSchema),
@@ -46,39 +46,55 @@ const NewUserPage = () => {
           <HiOutlineArrowLeft size={24} />
         </IconButton>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <TextField
-            placeholder="Nome"
-            label="Nome"
-            onChange={(e) => setValue("employeeName", e.target.value)}
+          <Controller
+            name="employeeName"
+            control={control}
+            render={({ field }) => (
+              <TextField placeholder="Nome" label="Nome" {...field} />
+            )}
           />
 
           {formState.errors.employeeName && (
             <p>{formState.errors.employeeName.message}</p>
           )}
 
-          <TextField
-            placeholder="Email"
-            label="Email"
-            type="email"
-            onChange={(e) => setValue("email", e.target.value)}
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                placeholder="Email"
+                label="Email"
+                type="email"
+                {...field}
+              />
+            )}
           />
 
           {formState.errors.email && <p>{formState.errors.email.message}</p>}
 
-          <TextField
-            placeholder="CPF"
-            label="CPF"
-            onChange={(e) => setValue("cpf", CPFMask(e.target.value))}
-            maxLength={14}
-            value={watch("cpf")}
+          <Controller
+            name="cpf"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                placeholder="CPF"
+                label="CPF"
+                maxLength={14}
+                value={field.value}
+                onChange={(e) => field.onChange(CPFMask(e.target.value))}
+              />
+            )}
           />
 
           {formState.errors.cpf && <p>{formState.errors.cpf.message}</p>}
 
-          <TextField
-            label="Data de admissão"
-            type="date"
-            onChange={(e) => setValue("admissionDate", e.target.value)}
+          <Controller
+            name="admissionDate"
+            control={control}
+            render={({ field }) => (
+              <TextField label="Data de admissão" type="date" {...field} />
+            )}
           />
           <Button type="submit" data-testid="create-new-admission">
             Cadastrar

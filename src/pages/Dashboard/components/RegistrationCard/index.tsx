@@ -20,7 +20,7 @@ const RegistrationCard: FC<RegistrationCardProps> = ({
   handleAction,
 }) => {
   return (
-    <S.Card>
+    <S.Card data-testid={`user-card-${data.id}`}>
       <S.IconAndText>
         <HiOutlineUser />
         <h3>{data.employeeName}</h3>
@@ -38,11 +38,13 @@ const RegistrationCard: FC<RegistrationCardProps> = ({
           <>
             <ButtonSmall
               bgcolor="rgb(255, 145, 154)"
+              data-testid="reprove-button"
               onClick={() => handleAction(data, "reprove")}
             >
               Reprovar
             </ButtonSmall>
             <ButtonSmall
+              data-testid="approve-button"
               bgcolor="rgb(155, 229, 155)"
               onClick={() => handleAction(data, "approve")}
             >
@@ -56,6 +58,7 @@ const RegistrationCard: FC<RegistrationCardProps> = ({
           <ButtonSmall
             bgcolor="#ff8858"
             onClick={() => handleAction(data, "review")}
+            data-testid="review-button"
           >
             Revisar novamente
           </ButtonSmall>

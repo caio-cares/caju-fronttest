@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("Aprovar um novo usuário com sucesso", async ({ page }) => {
+test("Excluir um usuário com sucesso", async ({ page }) => {
   const newUser = {
     id: "12345",
     employeeName: "Teste Frontend",
@@ -10,31 +10,34 @@ test("Aprovar um novo usuário com sucesso", async ({ page }) => {
     status: "REVIEW",
   };
 
+  // Array que representa a lista de usuários
+  let users = [newUser];
+
   // Intercepta as requisições para '/registrations'
   await page.route("**/registrations", async (route, request) => {
     if (request.method() === "GET") {
-      // Retorna o usuário com o status atual (pode ser 'REVIEW' ou 'APPROVED')
+      // Retorna a lista atual de usuários
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([newUser]),
+        body: JSON.stringify(users),
       });
     } else {
       await route.continue();
     }
   });
 
-  // Intercepta a requisição de aprovação do usuário
+  // Intercepta a requisição de exclusão do usuário
   await page.route(`**/registrations/${newUser.id}`, async (route, request) => {
-    if (request.method() === "PUT") {
-      // Atualiza o status do usuário para 'APPROVED' no objeto 'newUser'
-      newUser.status = "APPROVED";
+    if (request.method() === "DELETE") {
+      // Remove o usuário da lista
+      users = users.filter((user) => user.id !== newUser.id);
 
-      // Simula a aprovação do usuário
+      // Simula a exclusão bem-sucedida
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({ message: "Usuário excluído com sucesso" }),
       });
     } else {
       await route.continue();
@@ -52,12 +55,12 @@ test("Aprovar um novo usuário com sucesso", async ({ page }) => {
   const userCard = page.getByTestId(`user-card-${newUser.id}`);
   await expect(userCard).toBeVisible();
 
-  // Selecionar o botão "Aprovar" dentro do cartão do usuário
-  const approveButton = userCard.getByTestId("approve-button");
-  await expect(approveButton).toBeVisible();
+  // Selecionar o botão de exclusão dentro do cartão do usuário
+  const deleteButton = userCard.getByTestId("delete-button");
+  await expect(deleteButton).toBeVisible();
 
-  // Clicar no botão "Aprovar"
-  await approveButton.click();
+  // Clicar no botão de exclusão
+  await deleteButton.click();
 
   // Lidar com o diálogo de confirmação
   const confirmDialog = page.locator(".p-confirm-dialog");
@@ -65,10 +68,9 @@ test("Aprovar um novo usuário com sucesso", async ({ page }) => {
   const yesButton = confirmDialog.getByText("Sim", { exact: true });
   await yesButton.click();
 
-  // Aguarde até que o cartão do usuário apareça na coluna "Aprovado"
-  const approvedColumn = page.locator("text=Aprovado").locator("..");
-  await expect(approvedColumn).toContainText(newUser.employeeName);
-
   // Verificar que o usuário não está mais na coluna "Pronto para Revisar"
   await expect(reviewColumn).not.toContainText(newUser.employeeName);
+
+  // Opcionalmente, verificar que o usuário não está em nenhuma coluna
+  await expect(page.getByTestId(`user-card-${newUser.id}`)).not.toBeVisible();
 });
