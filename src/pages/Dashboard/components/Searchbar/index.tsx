@@ -1,3 +1,4 @@
+import { FC, useState } from "react";
 import { HiRefresh } from "react-icons/hi";
 import { useHistory } from "react-router-dom";
 import Button from "~/components/Buttons";
@@ -5,7 +6,6 @@ import { IconButton } from "~/components/Buttons/IconButton";
 import TextField from "~/components/TextField";
 import routes from "~/router/routes";
 import * as S from "./styles";
-import { FC, useEffect, useState } from "react";
 import { CPFMask, removeCPF } from "~/utils/mask";
 
 type SearchBarProps = {
