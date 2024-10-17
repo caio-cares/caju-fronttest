@@ -1,5 +1,5 @@
-import * as S from "./styles";
 import RegistrationCard from "../RegistrationCard";
+import * as S from "./styles";
 import { User } from "~/types/user";
 import {
   approveUser,

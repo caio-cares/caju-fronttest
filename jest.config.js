@@ -10,4 +10,5 @@ export default {
   moduleNameMapper: {
     "^~/(.+)": "<rootDir>/src/$1",
   },
+  testPathIgnorePatterns: ["/node_modules/", "e2e/"], // Adiciona o diretório e2e ao ignore
 };

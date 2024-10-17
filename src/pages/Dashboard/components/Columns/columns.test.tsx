@@ -1,26 +1,14 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-import { User } from "~/types/user";
-import {
-  approveUser,
-  deleteUser,
-  reproveUser,
-  reviewUser,
-} from "../../api/user-action";
+import * as userActions from "../../api/user-action";
 import { useToast } from "~/context/toast-context";
+import { User } from "~/types/user";
 import { Status } from "~/types/status";
+import "@testing-library/jest-dom";
 import Collumns from ".";
+import { confirmDialog } from "primereact/confirmdialog";
 
-// Mock do RegistrationCard
-jest.mock("../RegistrationCard", () => ({ data, handleAction }: any) => (
-  <div data-testid="registration-card">
-    <span>{data.name}</span>
-    <button onClick={() => handleAction(data, "approve")}>Approve</button>
-    <button onClick={() => handleAction(data, "delete")}>Delete</button>
-  </div>
-));
-
-// Mock das funções de ação de usuário
+// Mock das dependências externas
 jest.mock("../../api/user-action", () => ({
   approveUser: jest.fn(),
   deleteUser: jest.fn(),
@@ -28,111 +16,127 @@ jest.mock("../../api/user-action", () => ({
   reviewUser: jest.fn(),
 }));
 
-// Mock do Toast Context
 jest.mock("~/context/toast-context", () => ({
   useToast: jest.fn(),
 }));
 
+// Dados simulados
+const mockUsers: User[] = [
+  {
+    id: "1",
+    employeeName: "User One",
+    cpf: "123.456.789-00",
+    status: Status.REVIEW,
+    email: "user1@example.com",
+    admissionDate: "2021-10-10",
+  },
+  {
+    id: "2",
+    employeeName: "User Two",
+    cpf: "123.456.789-00",
+    status: Status.APPROVED,
+    email: "user2@example.com",
+    admissionDate: "2021-10-10",
+  },
+  {
+    id: "3",
+    employeeName: "User Three",
+    cpf: "123.456.789-00",
+    status: Status.REPROVED,
+    email: "user3@example.com",
+    admissionDate: "2021-10-10",
+  },
+];
+
 describe("Collumns Component", () => {
   const mockRefetch = jest.fn();
-  const mockShowToast = jest.fn();
+  const mockShow = jest.fn();
 
-  const mockRegistrations: User[] = [
-    {
-      admissionDate: "22/10/2023",
-      email: "luiz@caju.com.br",
-      employeeName: "Luiz Filho",
-      status: Status.APPROVED,
-      cpf: "56642105087",
-      id: "3",
-    },
-    {
-      id: "1",
-      admissionDate: "22/10/2023",
-      email: "filipe@caju.com.br",
-      employeeName: "Filipe Marins",
-      status: Status.REVIEW,
-      cpf: "78502270001",
-    },
-    {
-      id: "2",
-      admissionDate: "22/10/2023",
-      email: "jose@caju.com.br",
-      employeeName: "José Leão",
-      status: Status.REPROVED,
-      cpf: "78502270001",
-    },
-    {
-      id: "a5cb",
-      employeeName: "caio cares",
-      email: "caiocares@gmail.com",
-      cpf: "35072457877",
-      admissionDate: "2024-10-18",
-      status: Status.REVIEW,
-    },
-  ];
+  beforeAll(() => {
+    jest.clearAllMocks();
+    (useToast as jest.Mock).mockReturnValue({ show: mockShow });
 
-  beforeEach(() => {
-    (useToast as jest.Mock).mockReturnValue({
-      show: mockShowToast,
-    });
+    // Espionar a função confirmDialog e mockar sua implementação
+    jest
+      .spyOn(require("primereact/confirmdialog"), "confirmDialog")
+      .mockImplementation((options: any) => {
+        if (options && options.accept) {
+          options.accept();
+        }
+      });
   });
 
-  // it("should render columns and registrations correctly", () => {
-  //   render(
-  //     <Collumns registrations={mockRegistrations} refetch={mockRefetch} />
-  //   );
+  it("deve renderizar as colunas e cartões corretamente", () => {
+    render(<Collumns registrations={mockUsers} refetch={mockRefetch} />);
 
-  //   // Verifica se os títulos das colunas foram renderizados
-  //   expect(screen.getByText("Pronto para revisar")).toBeInTheDocument();
-  //   expect(screen.getByText("Aprovado")).toBeInTheDocument();
-  //   expect(screen.getByText("Reprovado")).toBeInTheDocument();
+    expect(screen.getByText("Pronto para revisar")).toBeInTheDocument();
+    expect(screen.getByText("Aprovado")).toBeInTheDocument();
+    expect(screen.getByText("Reprovado")).toBeInTheDocument();
 
-  //   // Verifica se os usuários corretos foram renderizados em suas colunas respectivas
-  //   expect(screen.getByText("User 1")).toBeInTheDocument();
-  //   expect(screen.getByText("User 2")).toBeInTheDocument();
-  //   expect(screen.getByText("User 3")).toBeInTheDocument();
-  // });
+    expect(screen.getByText("User One")).toBeInTheDocument();
+    expect(screen.getByText("User Two")).toBeInTheDocument();
+    expect(screen.getByText("User Three")).toBeInTheDocument();
+  });
 
-  // it("should handle action on approve user", async () => {
-  //   render(
-  //     <Collumns registrations={mockRegistrations} refetch={mockRefetch} />
-  //   );
+  it("deve aprovar um usuário corretamente", async () => {
+    render(<Collumns registrations={mockUsers} refetch={mockRefetch} />);
+    const approveButton = screen.getAllByText("Aprovar")[0];
+    fireEvent.click(approveButton);
 
-  //   // Aprovar um usuário
-  //   fireEvent.click(screen.getByText("Approve"));
+    // Espera que o `confirmDialog` tenha sido chamado
+    expect(confirmDialog).toHaveBeenCalled();
 
-  //   await waitFor(() => {
-  //     expect(approveUser).toHaveBeenCalledWith(mockRegistrations[0]);
-  //   });
+    // Verifica se o usuário foi aprovado corretamente
+    await waitFor(() => {
+      expect(userActions.approveUser).toHaveBeenCalledWith(mockUsers[0]);
+    });
 
-  //   expect(mockShowToast).toHaveBeenCalledWith(
-  //     "success",
-  //     "Sucesso",
-  //     "Ação executada com sucesso"
-  //   );
-  //   expect(mockRefetch).toHaveBeenCalled();
-  // });
-
-  it("should handle action on delete user", async () => {
-    render(
-      <Collumns registrations={mockRegistrations} refetch={mockRefetch} />
+    expect(mockShow).toHaveBeenCalledWith(
+      "success",
+      "Sucesso",
+      "Ação executada com sucesso"
     );
+    expect(mockRefetch).toHaveBeenCalled();
+  });
 
-    screen.debug();
+  it("deve reprovar um usuário corretamente", async () => {
+    render(<Collumns registrations={mockUsers} refetch={mockRefetch} />);
+    const approveButton = screen.getAllByText("Reprovar")[0];
+    fireEvent.click(approveButton);
 
-    // // Deletar um usuário
-    // fireEvent.click(screen.getByText("Delete"));
+    // Espera que o `confirmDialog` tenha sido chamado
+    expect(confirmDialog).toHaveBeenCalled();
 
-    // await waitFor(() => {
-    //   expect(deleteUser).toHaveBeenCalledWith(mockRegistrations[0]);
-    // });
+    // Verifica se o usuário foi aprovado corretamente
+    await waitFor(() => {
+      expect(userActions.approveUser).toHaveBeenCalledWith(mockUsers[0]);
+    });
 
-    // expect(mockShowToast).toHaveBeenCalledWith(
-    //   "success",
-    //   "Sucesso",
-    //   "Ação executada com sucesso"
-    // );
-    // expect(mockRefetch).toHaveBeenCalled();
+    expect(mockShow).toHaveBeenCalledWith(
+      "success",
+      "Sucesso",
+      "Ação executada com sucesso"
+    );
+    expect(mockRefetch).toHaveBeenCalled();
+  });
+  it("deve revisar um usuário corretamente", async () => {
+    render(<Collumns registrations={mockUsers} refetch={mockRefetch} />);
+    const approveButton = screen.getAllByText("Revisar novamente")[0];
+    fireEvent.click(approveButton);
+
+    // Espera que o `confirmDialog` tenha sido chamado
+    expect(confirmDialog).toHaveBeenCalled();
+
+    // Verifica se o usuário foi aprovado corretamente
+    await waitFor(() => {
+      expect(userActions.approveUser).toHaveBeenCalledWith(mockUsers[0]);
+    });
+
+    expect(mockShow).toHaveBeenCalledWith(
+      "success",
+      "Sucesso",
+      "Ação executada com sucesso"
+    );
+    expect(mockRefetch).toHaveBeenCalled();
   });
 });
