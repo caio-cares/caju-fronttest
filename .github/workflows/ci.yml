@@ -25,7 +25,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Executar testes
-        run: npm run test:dev -- --ci --coverage
+        run: npm run test:dev -- --ci --coverage --silent
 
       - name: Build da aplicação
         run: npm run build
